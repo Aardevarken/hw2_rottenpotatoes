@@ -7,24 +7,36 @@ class MoviesController < ApplicationController
   end
 
   def index
+    #If neither ratings or sort_by have keys, then this is either the first time visiting the page
+    # or the user has been redirected. Either way, it is safe to assign the session values to the
+    # params keys. If it is the first time visiting, they will stay nil and show the normal view,
+    # if redirected, will show the page with the settings saved. Also preserves flash messages
+    if params[:ratings].nil? and params[:sort_by].nil?
+      params[:ratings] = session[:ratings]
+      params[:sort_by] = session[:sort_by]
+    end
     @all_ratings = Movie.all_ratings
     @ratings = params[:ratings]
+    #if user unchecks all boxes, replace with session params. If first visit, check everything
     if @ratings.nil?
-      @ratings = {"G" => "1", "PG" => "1", "PG-13" => "1", "R" => "1"}
+      if session[:ratings].nil?
+        @ratings = {"G" => "1", "PG" => "1", "PG-13" => "1", "R" => "1"}
+      else
+        @ratings = session[:ratings]
+      end
       @movies = Movie.all
     else
       @movies = Movie.find_all_by_rating(@ratings.keys)
     end
-
     if params[:sort_by] == 'title'
       @title_class = "hilite"
       @movies = @movies.sort_by(&:title)
-      #@movies = Movie.all(:order => 'movies.title')
     elsif params[:sort_by] == 'release_date'
       @movies = @movies.sort_by(&:release_date)
       @release_date_class = "hilite"
     end
-
+    session[:ratings] = @ratings
+    session[:sort_by] = params[:sort_by]
   end
 
   def new
